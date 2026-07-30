@@ -1,4 +1,7 @@
+const mongoose = require('mongoose');
 const Problem = require('../models/problem');
+
+const isValidProblemId = (id) => mongoose.isValidObjectId(id);
 
 const listProblems = async (_req, res, next) => {
   try {
@@ -17,6 +20,10 @@ const listProblems = async (_req, res, next) => {
 
 const getProblem = async (req, res, next) => {
   try {
+    if (!isValidProblemId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid problem id' });
+    }
+
     const problem = await Problem.findById(req.params.id);
 
     if (!problem) {
@@ -25,7 +32,7 @@ const getProblem = async (req, res, next) => {
 
     return res.json(problem.toPublicProblem());
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -40,6 +47,10 @@ const upsertProblem = async (req, res, next) => {
       hiddenTestCases: req.body.hiddenTestCases || [],
     };
 
+    if (req.params.id && !isValidProblemId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid problem id' });
+    }
+
     const problem = req.params.id
       ? await Problem.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true })
       : await Problem.create(payload);
@@ -50,7 +61,7 @@ const upsertProblem = async (req, res, next) => {
 
     return res.status(req.params.id ? 200 : 201).json(problem.toPublicProblem());
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 

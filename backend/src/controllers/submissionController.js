@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Problem = require('../models/problem');
 const { runCode } = require('../services/judge0');
 
@@ -53,6 +54,10 @@ const runSampleCases = async (req, res, next) => {
 const submitSolution = async (req, res, next) => {
   try {
     const { problemId, sourceCode, language } = req.body;
+
+    if (!mongoose.isValidObjectId(problemId)) {
+      return res.status(400).json({ message: 'Invalid problem id' });
+    }
 
     const problem = await Problem.findById(problemId).select('+hiddenTestCases');
 
