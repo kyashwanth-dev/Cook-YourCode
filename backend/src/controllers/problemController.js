@@ -52,18 +52,20 @@ const upsertProblem = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid problem id' });
     }
 
-    const problem = req.params.id
-      ? await Problem.findOneAndUpdate({ _id: toObjectId(req.params.id) }, payload, {
-          new: true,
-          runValidators: true,
-        })
-      : await Problem.create(payload);
+    if (req.params.id) {
+      const problem = await Problem.findOne({ _id: toObjectId(req.params.id) });
 
-    if (!problem) {
-      return res.status(404).json({ message: 'Problem not found' });
+      if (!problem) {
+        return res.status(404).json({ message: 'Problem not found' });
+      }
+
+      Object.assign(problem, payload);
+      await problem.save();
+      return res.json(problem.toPublicProblem());
     }
 
-    return res.status(req.params.id ? 200 : 201).json(problem.toPublicProblem());
+    const problem = await Problem.create(payload);
+    return res.status(201).json(problem.toPublicProblem());
   } catch (error) {
     return next(error);
   }
