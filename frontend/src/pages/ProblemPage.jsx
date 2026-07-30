@@ -1,0 +1,161 @@
+import Editor from '@monaco-editor/react';
+import { useEffect, useMemo, useState } from 'react';
+import { api } from '../api';
+import { DEFAULT_CODE, LANGUAGE_OPTIONS } from '../data/languages';
+
+function ProblemPage({ problemId }) {
+  const [problem, setProblem] = useState(null);
+  const [language, setLanguage] = useState('python');
+  const [codeByLanguage, setCodeByLanguage] = useState(DEFAULT_CODE);
+  const [runResults, setRunResults] = useState([]);
+  const [submitResult, setSubmitResult] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchProblem = async () => {
+      try {
+        const { data } = await api.get(`/problems/${problemId}`);
+        setProblem(data);
+      } catch {
+        setError('Unable to load problem.');
+      }
+    };
+
+    fetchProblem();
+  }, [problemId]);
+
+  const sourceCode = useMemo(() => codeByLanguage[language], [codeByLanguage, language]);
+
+  const updateCode = (nextCode = '') => {
+    setCodeByLanguage((previous) => ({ ...previous, [language]: nextCode }));
+  };
+
+  const runCode = async () => {
+    setSubmitResult('');
+    setError('');
+
+    try {
+      const { data } = await api.post('/submissions/run', {
+        language,
+        sourceCode,
+        testCases: problem.sampleTestCases,
+      });
+      setRunResults(data.results);
+    } catch {
+      setError('Run failed. Check your code and try again.');
+    }
+  };
+
+  const submitCode = async () => {
+    setError('');
+
+    try {
+      const { data } = await api.post('/submissions/submit', {
+        problemId,
+        language,
+        sourceCode,
+      });
+      setSubmitResult(data.verdict);
+    } catch {
+      setError('Submit failed. Try again.');
+    }
+  };
+
+  if (error && !problem) {
+    return <p className="text-rose-600">{error}</p>;
+  }
+
+  if (!problem) {
+    return <p>Loading problem...</p>;
+  }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <h1 className="text-2xl font-semibold">{problem.title}</h1>
+        <p className="whitespace-pre-wrap text-slate-700">{problem.statement}</p>
+        <div>
+          <h2 className="mb-2 text-lg font-medium">Constraints</h2>
+          <p className="whitespace-pre-wrap text-slate-700">{problem.constraints}</p>
+        </div>
+        <div className="space-y-3">
+          <h2 className="text-lg font-medium">Samples</h2>
+          {problem.sampleTestCases.map((sample, index) => (
+            <article key={`${sample.input}-${index}`} className="rounded border border-slate-200 p-3 text-sm">
+              <p>
+                <span className="font-medium">Input:</span> {sample.input}
+              </p>
+              <p>
+                <span className="font-medium">Output:</span> {sample.output}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-sm font-medium" htmlFor="language">
+            Language
+          </label>
+          <select
+            id="language"
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            className="rounded border border-slate-300 px-3 py-2 text-sm"
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={runCode}
+            className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            Run
+          </button>
+          <button
+            type="button"
+            onClick={submitCode}
+            className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+          >
+            Submit
+          </button>
+          {submitResult ? <p className="text-sm font-semibold text-indigo-700">{submitResult}</p> : null}
+        </div>
+
+        <Editor
+          height="440px"
+          language={language === 'cpp' ? 'cpp' : language}
+          value={sourceCode}
+          theme="vs-dark"
+          onChange={updateCode}
+          options={{ minimap: { enabled: false }, fontSize: 14 }}
+        />
+
+        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+
+        <div className="space-y-2">
+          {runResults.map((result, index) => (
+            <div key={`${result.input}-${index}`} className="rounded border border-slate-200 p-3 text-sm">
+              <p>
+                <span className="font-medium">Sample {index + 1}:</span> {result.verdict}
+              </p>
+              <p className="whitespace-pre-wrap">
+                <span className="font-medium">Output:</span> {result.output || '(empty)'}
+              </p>
+              <p className="whitespace-pre-wrap">
+                <span className="font-medium">Expected:</span> {result.expectedOutput}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default ProblemPage;
