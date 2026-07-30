@@ -3,6 +3,7 @@ const Problem = require('../models/problem');
 const { runCode } = require('../services/judge0');
 
 const normalizeText = (value = '') => value.replace(/\r\n/g, '\n').trimEnd();
+const toObjectId = (id) => new mongoose.Types.ObjectId(id);
 
 const toRunResult = (verdict, result, expectedOutput) => ({
   verdict,
@@ -59,7 +60,7 @@ const submitSolution = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid problem id' });
     }
 
-    const problem = await Problem.findById(problemId).select('+hiddenTestCases');
+    const problem = await Problem.findOne({ _id: toObjectId(problemId) }).select('+hiddenTestCases');
 
     if (!problem) {
       return res.status(404).json({ message: 'Problem not found' });

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Problem = require('../models/problem');
 
 const isValidProblemId = (id) => mongoose.isValidObjectId(id);
+const toObjectId = (id) => new mongoose.Types.ObjectId(id);
 
 const listProblems = async (_req, res, next) => {
   try {
@@ -24,7 +25,7 @@ const getProblem = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid problem id' });
     }
 
-    const problem = await Problem.findById(req.params.id);
+    const problem = await Problem.findOne({ _id: toObjectId(req.params.id) });
 
     if (!problem) {
       return res.status(404).json({ message: 'Problem not found' });
@@ -52,7 +53,10 @@ const upsertProblem = async (req, res, next) => {
     }
 
     const problem = req.params.id
-      ? await Problem.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true })
+      ? await Problem.findOneAndUpdate({ _id: toObjectId(req.params.id) }, payload, {
+          new: true,
+          runValidators: true,
+        })
       : await Problem.create(payload);
 
     if (!problem) {
