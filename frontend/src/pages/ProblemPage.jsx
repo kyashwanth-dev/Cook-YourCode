@@ -8,7 +8,7 @@ function ProblemPage({ problemId }) {
   const [language, setLanguage] = useState('python');
   const [codeByLanguage, setCodeByLanguage] = useState(DEFAULT_CODE);
   const [runResults, setRunResults] = useState([]);
-  const [submitResult, setSubmitResult] = useState('');
+  const [submitResult, setSubmitResult] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -31,7 +31,7 @@ function ProblemPage({ problemId }) {
   };
 
   const runCode = async () => {
-    setSubmitResult('');
+    setSubmitResult(null);
     setError('');
 
     try {
@@ -55,7 +55,7 @@ function ProblemPage({ problemId }) {
         language,
         sourceCode,
       });
-      setSubmitResult(data.verdict);
+      setSubmitResult(data);
     } catch {
       setError('Submit failed. Try again.');
     }
@@ -124,7 +124,7 @@ function ProblemPage({ problemId }) {
           >
             Submit
           </button>
-          {submitResult ? <p className="text-sm font-semibold text-indigo-700">{submitResult}</p> : null}
+          {submitResult ? <p className="text-sm font-semibold text-indigo-700">{submitResult.verdict}</p> : null}
         </div>
 
         <Editor
@@ -139,10 +139,45 @@ function ProblemPage({ problemId }) {
         {error ? <p className="text-sm text-rose-600">{error}</p> : null}
 
         <div className="space-y-2">
+          {submitResult ? (
+            <div className="rounded border border-indigo-200 bg-indigo-50 p-3 text-sm">
+              <p>
+                <span className="font-medium">Submit verdict:</span> {submitResult.verdict}
+              </p>
+              {submitResult.status ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Status:</span> {submitResult.status}
+                </p>
+              ) : null}
+              {submitResult.failedTestCase ? (
+                <p>
+                  <span className="font-medium">Failed hidden test case:</span> #{submitResult.failedTestCase}
+                </p>
+              ) : null}
+              {submitResult.output ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Output:</span> {submitResult.output}
+                </p>
+              ) : null}
+              {submitResult.stderr ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Runtime error:</span> {submitResult.stderr}
+                </p>
+              ) : null}
+              {submitResult.compileOutput ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Compilation error:</span> {submitResult.compileOutput}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {runResults.map((result, index) => (
             <div key={`${result.input}-${index}`} className="rounded border border-slate-200 p-3 text-sm">
               <p>
                 <span className="font-medium">Sample {index + 1}:</span> {result.verdict}
+              </p>
+              <p className="whitespace-pre-wrap">
+                <span className="font-medium">Status:</span> {result.status}
               </p>
               <p className="whitespace-pre-wrap">
                 <span className="font-medium">Output:</span> {result.output || '(empty)'}
@@ -150,6 +185,16 @@ function ProblemPage({ problemId }) {
               <p className="whitespace-pre-wrap">
                 <span className="font-medium">Expected:</span> {result.expectedOutput}
               </p>
+              {result.stderr ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Runtime error:</span> {result.stderr}
+                </p>
+              ) : null}
+              {result.compileOutput ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Compilation error:</span> {result.compileOutput}
+                </p>
+              ) : null}
             </div>
           ))}
         </div>

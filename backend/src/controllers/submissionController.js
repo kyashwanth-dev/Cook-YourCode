@@ -66,12 +66,20 @@ const submitSolution = async (req, res, next) => {
       return res.status(404).json({ message: 'Problem not found' });
     }
 
-    for (const testCase of problem.hiddenTestCases) {
+    for (let index = 0; index < problem.hiddenTestCases.length; index += 1) {
+      const testCase = problem.hiddenTestCases[index];
       // eslint-disable-next-line no-await-in-loop
       const run = await evaluateSingleCase({ sourceCode, language, testCase });
 
       if (run.verdict !== 'Accepted') {
-        return res.json({ verdict: run.verdict, status: run.status });
+        return res.json({
+          verdict: run.verdict,
+          status: run.status,
+          output: run.output,
+          stderr: run.stderr,
+          compileOutput: run.compileOutput,
+          failedTestCase: index + 1,
+        });
       }
     }
 
