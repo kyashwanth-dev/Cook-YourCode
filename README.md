@@ -24,6 +24,7 @@ LeetCode-style coding platform with a React frontend and Express backend.
 ## Local Setup
 
 Follow this process to run both backend and frontend locally.
+For a dedicated setup guide (including MongoDB and Judge0 details), see [`SETUP.md`](./SETUP.md).
 
 ### 1) Prerequisites
 - Node.js (LTS) and npm
