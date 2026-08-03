@@ -66,10 +66,20 @@ const submitSolution = async (req, res, next) => {
       return res.status(404).json({ message: 'Problem not found' });
     }
 
-    for (let index = 0; index < problem.hiddenTestCases.length; index += 1) {
-      const testCase = problem.hiddenTestCases[index];
+    const hasHiddenTestCases = problem.hiddenTestCases.length > 0;
+    const testCasesToEvaluate = hasHiddenTestCases ? problem.hiddenTestCases : problem.sampleTestCases;
+
+    if (testCasesToEvaluate.length === 0) {
+      return res.status(400).json({ message: 'Problem has no test cases configured' });
+    }
+
+    let lastRun = null;
+
+    for (let index = 0; index < testCasesToEvaluate.length; index += 1) {
+      const testCase = testCasesToEvaluate[index];
       // eslint-disable-next-line no-await-in-loop
       const run = await evaluateSingleCase({ sourceCode, language, testCase });
+      lastRun = run;
 
       if (run.verdict !== 'Accepted') {
         return res.json({
@@ -79,11 +89,19 @@ const submitSolution = async (req, res, next) => {
           stderr: run.stderr,
           compileOutput: run.compileOutput,
           failedTestCase: index + 1,
+          testedAgainst: hasHiddenTestCases ? 'hidden' : 'sample',
         });
       }
     }
 
-    return res.json({ verdict: 'Accepted', status: 'All hidden test cases passed' });
+    return res.json({
+      verdict: 'Accepted',
+      status: hasHiddenTestCases ? 'All hidden test cases passed' : 'All sample test cases passed',
+      output: lastRun?.output || '',
+      stderr: '',
+      compileOutput: '',
+      testedAgainst: hasHiddenTestCases ? 'hidden' : 'sample',
+    });
   } catch (error) {
     return next(error);
   }
