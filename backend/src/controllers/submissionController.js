@@ -14,6 +14,16 @@ const toRunResult = (verdict, result, expectedOutput) => ({
   compileOutput: result.compile_output || '',
 });
 
+const toCaseResult = ({ index, run, testCase, includeSensitive }) => ({
+  testCase: index + 1,
+  verdict: run.verdict,
+  status: run.status,
+  output: run.output,
+  stderr: run.stderr,
+  compileOutput: run.compileOutput,
+  ...(includeSensitive ? { input: testCase.input, expectedOutput: run.expectedOutput } : {}),
+});
+
 const evaluateSingleCase = async ({ sourceCode, language, testCase }) => {
   const result = await runCode({ sourceCode, language, stdin: testCase.input });
 
@@ -74,12 +84,15 @@ const submitSolution = async (req, res, next) => {
     }
 
     let lastRun = null;
+    const caseResults = [];
+    const includeSensitive = !hasHiddenTestCases;
 
     for (let index = 0; index < testCasesToEvaluate.length; index += 1) {
       const testCase = testCasesToEvaluate[index];
       // eslint-disable-next-line no-await-in-loop
       const run = await evaluateSingleCase({ sourceCode, language, testCase });
       lastRun = run;
+      caseResults.push(toCaseResult({ index, run, testCase, includeSensitive }));
 
       if (run.verdict !== 'Accepted') {
         return res.json({
@@ -90,6 +103,7 @@ const submitSolution = async (req, res, next) => {
           compileOutput: run.compileOutput,
           failedTestCase: index + 1,
           testedAgainst: hasHiddenTestCases ? 'hidden' : 'sample',
+          caseResults,
         });
       }
     }
@@ -101,6 +115,7 @@ const submitSolution = async (req, res, next) => {
       stderr: '',
       compileOutput: '',
       testedAgainst: hasHiddenTestCases ? 'hidden' : 'sample',
+      caseResults,
     });
   } catch (error) {
     return next(error);

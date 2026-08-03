@@ -9,6 +9,7 @@ function ProblemPage({ problemId }) {
   const [codeByLanguage, setCodeByLanguage] = useState(DEFAULT_CODE);
   const [runResults, setRunResults] = useState([]);
   const [submitResult, setSubmitResult] = useState(null);
+  const [submitCaseResults, setSubmitCaseResults] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -32,6 +33,7 @@ function ProblemPage({ problemId }) {
 
   const runCode = async () => {
     setSubmitResult(null);
+    setSubmitCaseResults([]);
     setError('');
 
     try {
@@ -49,6 +51,7 @@ function ProblemPage({ problemId }) {
   const submitCode = async () => {
     setSubmitResult(null);
     setRunResults([]);
+    setSubmitCaseResults([]);
     setError('');
 
     try {
@@ -58,6 +61,7 @@ function ProblemPage({ problemId }) {
         sourceCode,
       });
       setSubmitResult(data);
+      setSubmitCaseResults(data.caseResults || []);
     } catch {
       setError('Submit failed. Try again.');
     }
@@ -174,6 +178,44 @@ function ProblemPage({ problemId }) {
                   <span className="font-medium">Compilation error:</span> {submitResult.compileOutput}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+          {submitCaseResults.length > 0 ? (
+            <div className="rounded border border-indigo-200 bg-indigo-50 p-3 text-sm">
+              <p className="mb-2 font-medium">Testcase Output</p>
+              {submitCaseResults.map((result) => (
+                <div key={`submit-case-${result.testCase}`} className="mb-3 rounded border border-indigo-100 bg-white p-3 last:mb-0">
+                  <p>
+                    <span className="font-medium">Test case {result.testCase}:</span> {result.verdict}
+                  </p>
+                  <p className="whitespace-pre-wrap">
+                    <span className="font-medium">Status:</span> {result.status}
+                  </p>
+                  {'input' in result ? (
+                    <p className="whitespace-pre-wrap">
+                      <span className="font-medium">Input:</span> {result.input}
+                    </p>
+                  ) : null}
+                  {'expectedOutput' in result ? (
+                    <p className="whitespace-pre-wrap">
+                      <span className="font-medium">Expected:</span> {result.expectedOutput}
+                    </p>
+                  ) : null}
+                  <p className="whitespace-pre-wrap">
+                    <span className="font-medium">Output:</span> {result.output || '(empty)'}
+                  </p>
+                  {result.stderr ? (
+                    <p className="whitespace-pre-wrap">
+                      <span className="font-medium">Runtime error:</span> {result.stderr}
+                    </p>
+                  ) : null}
+                  {result.compileOutput ? (
+                    <p className="whitespace-pre-wrap">
+                      <span className="font-medium">Compilation error:</span> {result.compileOutput}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
             </div>
           ) : null}
           {runResults.map((result, index) => (
