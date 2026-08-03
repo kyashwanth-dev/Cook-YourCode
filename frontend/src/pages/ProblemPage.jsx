@@ -47,6 +47,8 @@ function ProblemPage({ problemId }) {
   };
 
   const submitCode = async () => {
+    setSubmitResult(null);
+    setRunResults([]);
     setError('');
 
     try {
@@ -144,6 +146,11 @@ function ProblemPage({ problemId }) {
               <p>
                 <span className="font-medium">Submit verdict:</span> {submitResult.verdict}
               </p>
+              {submitResult.testedAgainst ? (
+                <p className="whitespace-pre-wrap">
+                  <span className="font-medium">Checked against:</span> {submitResult.testedAgainst} test cases
+                </p>
+              ) : null}
               {submitResult.status ? (
                 <p className="whitespace-pre-wrap">
                   <span className="font-medium">Status:</span> {submitResult.status}
@@ -154,11 +161,9 @@ function ProblemPage({ problemId }) {
                   <span className="font-medium">Failed hidden test case:</span> #{submitResult.failedTestCase}
                 </p>
               ) : null}
-              {submitResult.output ? (
-                <p className="whitespace-pre-wrap">
-                  <span className="font-medium">Output:</span> {submitResult.output}
-                </p>
-              ) : null}
+              <p className="whitespace-pre-wrap">
+                <span className="font-medium">Output:</span> {submitResult.output || '(empty)'}
+              </p>
               {submitResult.stderr ? (
                 <p className="whitespace-pre-wrap">
                   <span className="font-medium">Runtime error:</span> {submitResult.stderr}
