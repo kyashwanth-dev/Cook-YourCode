@@ -51,8 +51,9 @@ function AdminPage() {
         setStatus('Problem created successfully.');
         setForm(defaultProblem);
       }
-    } catch {
-      setStatus('Unable to save problem. Check input and try again.');
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      setStatus(message || 'Unable to save problem. Check input and try again.');
     }
   };
 
